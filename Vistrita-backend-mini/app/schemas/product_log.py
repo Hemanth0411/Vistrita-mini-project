@@ -4,6 +4,8 @@ from typing import Optional
 
 class ProductLogBase(BaseModel):
     product_name: str
+    category: str
+    tone: str
     description: str
 
 class ProductLogCreate(ProductLogBase):

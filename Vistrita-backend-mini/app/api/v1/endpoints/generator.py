@@ -38,6 +38,8 @@ async def generate_description(
 
         db_log = ProductDescription(
             product_name=request.title,
+            category=request.category,
+            tone=request.tone,
             description=result.description_long, # Or full JSON dump depending on your preference
             user_id=current_user.id
         )

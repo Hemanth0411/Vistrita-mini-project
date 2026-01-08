@@ -5,7 +5,7 @@ class GenerateRequest(BaseModel):
     title: str = Field(..., example="Wireless Noise Cancelling Headphones")
     category: str = Field(..., example="Electronics")
     features: List[str] = Field(..., example=["Active Noise Cancellation", "20h Battery", "Bluetooth 5.0"], min_items=1)
-    tone: str = Field("neutral", pattern="^(neutral|formal|playful|luxury|minimalist)$", example="luxury")
+    tone: str = Field("neutral", pattern="^(neutral|formal|playful|luxury|minimalist|Professional|Casual|Technical|Luxury|Playful|Minimalist)$", example="luxury")
     image: Optional[str] = Field(None, description="Base64 encoded image string")
 
 class VisionRequest(BaseModel):

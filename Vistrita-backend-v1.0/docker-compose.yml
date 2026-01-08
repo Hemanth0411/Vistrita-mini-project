@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: vistrita_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - ENV_TYPE=dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  db:
+    image: postgres:15-alpine
+    container_name: vistrita_db
+    restart: always
+    environment:
+      - POSTGRES_USER=vistrita_user
+      - POSTGRES_PASSWORD=vistrita_pass
+      - POSTGRES_DB=vistrita_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

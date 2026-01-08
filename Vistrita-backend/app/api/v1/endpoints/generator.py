@@ -8,11 +8,21 @@ from app.schemas.product import (
 )
 from app.services.generator import generate_product_description
 from app.services.vision import extract_attributes_from_image
+from app.core.database import get_db
+from sqlalchemy.orm import Session
+from app.models.user import User
+from app.models.product import ProductDescription
+from app.core.auth import get_current_user
+from fastapi import Depends
 
 router = APIRouter()
 
 @router.post("/generate", response_model=GenerateResponse)
-async def generate_description(request: GenerateRequest):
+async def generate_description(
+    request: GenerateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Generates marketing content (titles, description, bullets) based on product details.
     """
@@ -25,6 +35,15 @@ async def generate_description(request: GenerateRequest):
 
     try:
         result = generate_product_description(request)
+
+        db_log = ProductDescription(
+            product_name=request.title,
+            description=result.description_long, # Or full JSON dump depending on your preference
+            user_id=current_user.id
+        )
+        db.add(db_log)
+        db.commit()
+        
         return result
     except Exception as e:
         raise HTTPException(

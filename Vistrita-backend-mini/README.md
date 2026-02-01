@@ -8,7 +8,9 @@ This API leverages **Google Gemini 2.0 Flash** to generate marketing copy and ex
 - **AI Text Generation:** Create titles, descriptions, and bullets from raw features.
 - **Vision Extraction:** Upload product images to automatically detect color, material, and style.
 - **One-Shot Generation:** Upload an image -> Get a full product description in one step.
+- **Rate Limiting:** Global and endpoint-specific rate limits to prevent abuse (via `slowapi`).
 - **Strict JSON Schemas:** Guaranteed valid JSON outputs for frontend integration.
+
 
 ## 🛠️ Tech Stack
 - **Language:** Python 3.10+
@@ -53,6 +55,7 @@ Once running, access the interactive Swagger UI:
 | `POST` | `/api/v1/generate/from-vision` | Image + Tone -> Full Description |
 
 ## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/Hemanth0411/Vistrita-backend/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 
 

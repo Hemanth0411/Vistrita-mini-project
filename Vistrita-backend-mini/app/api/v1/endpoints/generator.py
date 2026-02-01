@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
+
 from app.schemas.product import (
     GenerateRequest, 
     GenerateResponse, 
@@ -17,11 +18,17 @@ from app.models.product import ProductDescription
 from app.core.auth import get_current_user
 from fastapi import Depends
 
+from app.core.limiter import limiter
+from app.core.exceptions import ValidationError, AIProviderError
+
+
 router = APIRouter()
 
 @router.post("/generate", response_model=GenerateResponse)
+@limiter.limit("10/minute")
 async def generate_description(
-    request: GenerateRequest,
+    request: Request,
+    generate_request: GenerateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -29,19 +36,17 @@ async def generate_description(
     Generates marketing content (titles, description, bullets) based on product details.
     """
     
-    if not request.title or not request.category:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Title and Category are required."
-        )
+    if not generate_request.title or not generate_request.category:
+        raise ValidationError("Title and Category are required.")
+
 
     try:
-        result = generate_product_description(request)
+        result = generate_product_description(generate_request)
 
         db_log = ProductDescription(
-            product_name=request.title,
-            category=request.category,
-            tone=request.tone,
+            product_name=generate_request.title,
+            category=generate_request.category,
+            tone=generate_request.tone,
             description=result["description_long"], 
             titles=result.get("titles", []),
             description_short=result.get("description_short", ""),
@@ -56,14 +61,14 @@ async def generate_description(
         
         return result
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Generation failed: {str(e)}"
-        )
+        raise AIProviderError(str(e))
+
 
 @router.post("/from-vision", response_model=GenerateFromImageResponse)
+@limiter.limit("5/minute")
 async def generate_from_vision(
-    request: GenerateFromImageRequest,
+    request: Request,
+    vision_request: GenerateFromImageRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -73,7 +78,7 @@ async def generate_from_vision(
     """
     try:
         # STEP 1: Extract Attributes (Vision)
-        vision_req = VisionRequest(image=request.image)
+        vision_req = VisionRequest(image=vision_request.image)
         vision_result = extract_attributes_from_image(vision_req)
         attrs = vision_result.get("attributes", {})
         
@@ -95,8 +100,8 @@ async def generate_from_vision(
             title=title,
             category=category,
             features=[detected_material] + detected_keywords,
-            tone=request.tone,
-            image=request.image
+            tone=vision_request.tone,
+            image=vision_request.image
         )
 
         # STEP 3: Generate Text (LLM)
@@ -106,7 +111,7 @@ async def generate_from_vision(
         db_log = ProductDescription(
             product_name=title,
             category=category,
-            tone=request.tone,
+            tone=vision_request.tone,
             description=text_result["description_long"],
             titles=text_result.get("titles", []),
             description_short=text_result.get("description_short", ""),
@@ -131,8 +136,10 @@ async def generate_from_vision(
         )
 
 @router.post("/generate/bulk", response_model=BulkGenerateResponse)
+@limiter.limit("2/minute")
 async def generate_bulk_descriptions(
-    request: BulkGenerateRequest,
+    request: Request,
+    bulk_request: BulkGenerateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -144,7 +151,7 @@ async def generate_bulk_descriptions(
     successful_count = 0
     failed_count = 0
 
-    for product_req in request.products:
+    for product_req in bulk_request.products:
         # Generate content (this handles its own exceptions and returns an error dict if needed)
         result = generate_product_description(product_req)
         
@@ -185,7 +192,7 @@ async def generate_bulk_descriptions(
     return {
         "results": results,
         "metrics": {
-            "total": len(request.products),
+            "total": len(bulk_request.products),
             "successful": successful_count,
             "failed": failed_count
         }

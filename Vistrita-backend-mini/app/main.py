@@ -4,6 +4,11 @@ from fastapi.openapi.utils import get_openapi
 from app.api.v1.router import api_router
 from app.core.database import engine, Base
 from app.models import user, product # Import models to ensure they are registered
+from app.core.limiter import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -15,6 +20,12 @@ app = FastAPI(
     docs_url="/docs", # Swagger UI
     redoc_url="/redoc"
 )
+
+# Add Rate Limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 
 # Custom OpenAPI schema to add API Key security
 def custom_openapi():

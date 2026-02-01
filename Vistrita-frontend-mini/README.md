@@ -1,73 +1,43 @@
-# Welcome to your Lovable project
+# Vistrita Frontend
 
-## Project info
+The frontend for **Vistrita**, an AI-powered Product Description Generator. Built with React, Vite, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Features
+- **AI Content Generation:** Dashboard to input product features and get marketing copy.
+- **Image Analysis:** Upload images to extract attributes (color, material, style) using Computer Vision.
+- **Unified Workflow:** Extract features from an image and generate a full description in one go.
+- **History Tracking:** Review previously generated product descriptions.
+- **Modern UI:** Built with Shadcn/UI and Framer Motion for a premium look and feel.
 
-## How can I edit this code?
+## 🛠️ Tech Stack
+- **Framework:** React + Vite
+- **Styling:** Tailwind CSS + Shadcn/UI
+- **Animations:** Framer Motion
+- **Language:** TypeScript
+- **Containerization:** Docker
 
-There are several ways of editing your application.
+## ⚡ Quick Start
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### 2. Configure Environment
+Create a `.env` file or use the global one in the root. The frontend expects the backend to be at `http://localhost:8000`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Run Development Server
+```bash
+npm run dev
+```
+The app will be available at [http://localhost:3000](http://localhost:3000)
 
-**Use GitHub Codespaces**
+## 📦 Docker Deployment
+You can also run just the frontend via Docker:
+```bash
+docker build -t vistrita-frontend .
+docker run -p 3000:80 vistrita-frontend
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📜 License
+This project is licensed under the MIT License.

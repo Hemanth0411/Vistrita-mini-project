@@ -1,6 +1,7 @@
 from google import genai
 from google.genai import types
 import json
+import re
 from app.core.config import settings
 from app.schemas.product import GenerateRequest
 
@@ -18,9 +19,10 @@ def generate_product_description(data: GenerateRequest) -> dict:
             "description_short": { "type": "string" },
             "description_long": { "type": "string" },
             "bullets": { "type": "array", "items": { "type": "string" } },
-            "warnings": { "type": "array", "items": { "type": "string" } }
+            "warnings": { "type": "array", "items": { "type": "string" } },
+            "keywords": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["titles", "description_short", "description_long", "bullets", "warnings"]
+        "required": ["titles", "description_short", "description_long", "bullets", "warnings", "keywords"]
     }
 
     prompt = f"""
@@ -48,14 +50,20 @@ Output JSON ONLY.
                 response_mime_type="application/json",
                 response_schema=schema,
                 temperature=0.2,          # you can tune these as needed
-                max_output_tokens=512
+                max_output_tokens=2048
             )
         )
         json_str = response.text
-        result = json.loads(json_str)
+        
+        # Robust JSON extraction using regex
+        match = re.search(r'(\{.*\})', json_str, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+        
+        result = json.loads(json_str.strip())
 
         # Optional: validate that required keys are present
-        for key in ["titles", "description_short", "description_long", "bullets", "warnings"]:
+        for key in ["titles", "description_short", "description_long", "bullets", "warnings", "keywords"]:
             if key not in result:
                 raise ValueError(f"Missing key in generated JSON: {key}")
 
@@ -68,5 +76,6 @@ Output JSON ONLY.
             "description_short": "Could not generate content.",
             "description_long": f"System Error: {str(e)}",
             "bullets": [],
+            "keywords": [],
             "warnings": ["Please check API Key, model name, schema validity, or Internet Connection"]
         }

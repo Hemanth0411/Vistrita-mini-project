@@ -4,7 +4,9 @@ from app.schemas.product import (
     GenerateResponse, 
     GenerateFromImageRequest, 
     GenerateFromImageResponse,
-    VisionRequest 
+    VisionRequest,
+    BulkGenerateRequest,
+    BulkGenerateResponse
 )
 from app.services.generator import generate_product_description
 from app.services.vision import extract_attributes_from_image
@@ -40,7 +42,13 @@ async def generate_description(
             product_name=request.title,
             category=request.category,
             tone=request.tone,
-            description=result.description_long, # Or full JSON dump depending on your preference
+            description=result["description_long"], 
+            titles=result.get("titles", []),
+            description_short=result.get("description_short", ""),
+            description_long=result.get("description_long", ""),
+            bullets=result.get("bullets", []),
+            warnings=result.get("warnings", []),
+            keywords=result.get("keywords", []),
             user_id=current_user.id
         )
         db.add(db_log)
@@ -54,7 +62,11 @@ async def generate_description(
         )
 
 @router.post("/from-vision", response_model=GenerateFromImageResponse)
-async def generate_from_vision(request: GenerateFromImageRequest):
+async def generate_from_vision(
+    request: GenerateFromImageRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     1. Extracts attributes from image.
     2. Uses those attributes to generate text description automatically.
@@ -75,10 +87,13 @@ async def generate_from_vision(request: GenerateFromImageRequest):
         detected_material = attrs.get("material", "")
         detected_keywords = attrs.get("keywords", [])
 
+        title = f"{detected_color} {detected_shape}" # e.g. "Red Sneaker"
+        category = attrs.get("style", "General")
+
         # Create a temporary GenerateRequest
         gen_request = GenerateRequest(
-            title=f"{detected_color} {detected_shape}", # e.g. "Red Sneaker"
-            category=attrs.get("style", "General"),
+            title=title,
+            category=category,
             features=[detected_material] + detected_keywords,
             tone=request.tone,
             image=request.image
@@ -86,6 +101,23 @@ async def generate_from_vision(request: GenerateFromImageRequest):
 
         # STEP 3: Generate Text (LLM)
         text_result = generate_product_description(gen_request)
+
+        # STEP 4: SAVE TO DB
+        db_log = ProductDescription(
+            product_name=title,
+            category=category,
+            tone=request.tone,
+            description=text_result["description_long"],
+            titles=text_result.get("titles", []),
+            description_short=text_result.get("description_short", ""),
+            description_long=text_result.get("description_long", ""),
+            bullets=text_result.get("bullets", []),
+            warnings=text_result.get("warnings", []),
+            keywords=text_result.get("keywords", []),
+            user_id=current_user.id
+        )
+        db.add(db_log)
+        db.commit()
 
         return {
             "attributes": attrs,
@@ -97,3 +129,64 @@ async def generate_from_vision(request: GenerateFromImageRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Composite generation failed: {str(e)}"
         )
+
+@router.post("/generate/bulk", response_model=BulkGenerateResponse)
+async def generate_bulk_descriptions(
+    request: BulkGenerateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accepts a list of products, generates descriptions for each, and saves them to the DB.
+    Returns the list of generated results.
+    """
+    results = []
+    successful_count = 0
+    failed_count = 0
+
+    for product_req in request.products:
+        # Generate content (this handles its own exceptions and returns an error dict if needed)
+        result = generate_product_description(product_req)
+        
+        # Check if it was an error response/fallback
+        # (The service returns "titles": ["Error..."] on failure)
+        is_error = result.get("titles") and result["titles"][0].startswith("Error")
+        
+        if is_error:
+            failed_count += 1
+        else:
+            successful_count += 1
+
+        # Save to DB (only if we have a valid-ish result, though saving errors can be useful too)
+        # We will save everything that has a description_long
+        try:
+            db_log = ProductDescription(
+                product_name=product_req.title,
+                category=product_req.category,
+                tone=product_req.tone,
+                description=result["description_long"],
+                titles=result.get("titles", []),
+                description_short=result.get("description_short", ""),
+                description_long=result.get("description_long", ""),
+                bullets=result.get("bullets", []),
+                warnings=result.get("warnings", []),
+                keywords=result.get("keywords", []),
+                user_id=current_user.id
+            )
+            db.add(db_log)
+            db.commit()
+            db.refresh(db_log)
+        except Exception as e:
+            print(f"Failed to save log for {product_req.title}: {e}")
+            # we don't fail the request, just log it
+        
+        results.append(result)
+
+    return {
+        "results": results,
+        "metrics": {
+            "total": len(request.products),
+            "successful": successful_count,
+            "failed": failed_count
+        }
+    }

@@ -112,6 +112,7 @@
     from {
       box-shadow: 0 0 20px -10px hsl(var(--glow-primary) / 0.5);
     }
+
     to {
       box-shadow: 0 0 40px -10px hsl(var(--glow-primary) / 0.8);
     }
@@ -122,9 +123,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-10px);
     }

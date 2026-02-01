@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: vistrita_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-vistrita_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-vistrita_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-vistrita_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: 
+      context: ./Vistrita-backend-mini
+    container_name: vistrita_api
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Vistrita-backend-mini:/app
+    environment:
+      - ENV_TYPE=dev
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-vistrita_user}:${POSTGRES_PASSWORD:-vistrita_pass}@db:5432/${POSTGRES_DB:-vistrita_db}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - VISTRITA_API_KEY=${VISTRITA_API_KEY}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./Vistrita-frontend-mini
+    container_name: vistrita_ui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Vistrita-frontend-mini:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

@@ -17,6 +17,7 @@ class GenerateResponse(BaseModel):
     description_long: str
     bullets: List[str]
     warnings: List[str]
+    keywords: List[str]
 
 class VisionResponse(BaseModel):
     attributes: dict
@@ -28,3 +29,10 @@ class GenerateFromImageRequest(BaseModel):
 class GenerateFromImageResponse(BaseModel):
     attributes: dict
     generated: GenerateResponse
+
+class BulkGenerateRequest(BaseModel):
+    products: List[GenerateRequest]
+
+class BulkGenerateResponse(BaseModel):
+    results: List[GenerateResponse]
+    metrics: dict = Field(..., example={"total": 10, "successful": 9, "failed": 1})

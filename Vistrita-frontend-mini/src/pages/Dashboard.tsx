@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import ProductForm from '@/components/ProductForm';
-import ImageUpload from '@/components/ImageUpload';
 import ResultDisplay from '@/components/ResultDisplay';
 import { useAuthenticatedFetch } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -52,33 +51,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleImageUpload = async (base64: string) => {
-    setIsLoading(true);
-    try {
-      const response = await authFetch('/generator/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64 }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Vision analysis failed');
-      }
-
-      const resultData = await response.json();
-      setResult(resultData);
-      toast({ title: 'Success!', description: 'Image analyzed successfully.' });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Analysis failed',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Layout>
       <motion.div
@@ -96,7 +68,6 @@ const Dashboard = () => {
         {/* Left Column - Forms */}
         <div className="space-y-6">
           <ProductForm onGenerate={handleGenerate} isLoading={isLoading} />
-          <ImageUpload onUpload={handleImageUpload} isLoading={isLoading} />
         </div>
 
         {/* Right Column - Results */}

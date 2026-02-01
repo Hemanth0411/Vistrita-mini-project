@@ -7,6 +7,12 @@ class ProductLogBase(BaseModel):
     category: str
     tone: str
     description: str
+    titles: Optional[list] = []
+    description_short: Optional[str] = ""
+    description_long: Optional[str] = ""
+    bullets: Optional[list] = []
+    warnings: Optional[list] = []
+    keywords: Optional[list] = []
 
 class ProductLogCreate(ProductLogBase):
     pass

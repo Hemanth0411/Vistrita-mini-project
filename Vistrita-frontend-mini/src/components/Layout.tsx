@@ -45,10 +45,9 @@ const Layout = ({ children }: LayoutProps) => {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-primary/20 to-accent/20 text-foreground border border-primary/30'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-glass'
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${isActive
+                  ? 'bg-gradient-to-r from-primary/20 to-accent/20 text-foreground border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-glass'
                 }`
               }
             >
